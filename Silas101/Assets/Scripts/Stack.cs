@@ -5,10 +5,14 @@ using UnityEngine;
 public class Stack : MonoBehaviour
 {
     public float speed;
-    public float minBoundary, maxBoundary;
+    public float minZBoundary, maxZBoundary;
+    public float minXBoundary, maxXBoundary;
+
+    public static bool _changeDirection = false;
 
     private bool _moveStack         = false;
-    private bool _changeDirection   = false;
+    private bool _reverseMovement   = false;
+    //private bool _changeDirection   = false;
 
     private Color    _stackColor;
     private Renderer _stackRenderer;
@@ -24,28 +28,60 @@ public class Stack : MonoBehaviour
     {
         if (_moveStack)
         {
+            // Moves in the z direction
             if (!_changeDirection)
             {
-                // Keep moving in one direction
-                transform.position += transform.parent.forward * speed * Time.deltaTime;
-
-                // Check if stack has gone out of boundary
-                if (transform.localPosition.z >= maxBoundary)
+                if (!_reverseMovement)
                 {
-                    // Change Direction
-                    _changeDirection = true;
+                    // Keep moving in one direction
+                    transform.position += transform.forward * speed * Time.deltaTime;
+
+                    // Check if stack has gone out of boundary
+                    if (transform.localPosition.z >= maxZBoundary)
+                    {
+                        // reverse movement
+                        _reverseMovement = true;
+                    }
+                }
+                else // move in the reverse direction
+                {
+                    // Keep moving in the other direction once the boundary is hit
+                    transform.position += -transform.forward * speed * Time.deltaTime;
+
+                    // Check if stack has gone out of boundary
+                    if (transform.localPosition.z <= minZBoundary)
+                    {
+                        // reverse movement
+                        _reverseMovement = false;
+                    }
                 }
             }
-            else
+            // moves in the x direction
+            else if (_changeDirection)
             {
-                // Keep moving in the other direction once the boundary is hit
-                transform.position += -transform.parent.forward * speed * Time.deltaTime;
-
-                // Check if stack has gone out of boundary
-                if (transform.localPosition.z <= minBoundary)
+                if (!_reverseMovement)
                 {
-                    // Change Direction
-                    _changeDirection = false;
+                    // Keep moving in one direction
+                    transform.position += transform.right * speed * Time.deltaTime;
+
+                    // Check if stack has gone out of boundary
+                    if (transform.localPosition.x >= maxXBoundary)
+                    {
+                        // reverse movement
+                        _reverseMovement = true;
+                    }
+                }
+                else // move in the reverse direction
+                {
+                    // Keep moving in the other direction once the boundary is hit
+                    transform.position += -transform.right * speed * Time.deltaTime;
+
+                    // Check if stack has gone out of boundary
+                    if (transform.localPosition.x <= minXBoundary)
+                    {
+                        // reverse movement
+                        _reverseMovement = false;
+                    }
                 }
             }
         }
@@ -65,5 +101,4 @@ public class Stack : MonoBehaviour
         get { return _moveStack; }
         set { _moveStack = value; }
     }
-
 }

@@ -13,10 +13,13 @@ public class GameManager : MonoBehaviour
 
     // UI
     public TextMeshProUGUI scoreText;
+    public TextMeshProUGUI finalScoreText;
     public GameObject      mainMenu;
     public GameObject      optionsMenu;
+    public GameObject      gameOverMenu;
 
 
+    public  GameObject lastStack;
     private GameObject currentStack     = null;
     private Transform  selectedSpawner  = null;
 
@@ -35,7 +38,7 @@ public class GameManager : MonoBehaviour
 
     // Update is called once per frame
     void Update()
-    {        
+    {
         if (Input.GetMouseButtonDown(0))
         {
             // Click to start the Game
@@ -47,7 +50,7 @@ public class GameManager : MonoBehaviour
                 mainMenu.SetActive(false);
 
                 // Enable score text
-                scoreText.enabled = true;
+                scoreText.gameObject.SetActive(true);
 
                 // Spawn the first stack
                 SpawnStack();
@@ -61,12 +64,54 @@ public class GameManager : MonoBehaviour
                     currentStack.GetComponent<Stack>().MoveStack = false;
                     currentStack.transform.parent = null;
 
-                    // spawn the next stack
-                    SpawnStack();
+                    // calculate hangover value
+                    float hangover;
+                    float stackSize;
 
-                    // Move the position of the camera upwards 
-                    // each time a new stack is spawned.
-                    cam.GetComponent<CameraBehaviour>().MovePosition();
+                    // calculate hangover & stack size value based on stack direction
+                    if (!Stack._changeDirection)
+                    {
+                        hangover  = currentStack.transform.position.z - lastStack.transform.position.z;
+                        stackSize = lastStack.transform.localScale.z;
+                    }
+                    else
+                    {
+                        hangover = currentStack.transform.position.x - lastStack.transform.position.x;
+                        stackSize = lastStack.transform.localScale.x;
+                    }                    
+
+                    // check if player has went over limit
+                    if (Mathf.Abs(hangover) >= stackSize)
+                    {
+                        GameOver();
+                    }
+                    else
+                    {
+                        // Increment the score
+                        IncrementScore();
+
+                        // Otherwise, continue the game
+                        // and split the stack
+                        if (!Stack._changeDirection)
+                        {
+                            SplitStackZ(hangover);
+                        }
+                        else
+                        {
+                            SplitStackX(hangover);
+                        }
+                            
+                        // make the current stack
+                        // as the new stack
+                        lastStack = currentStack;
+
+                        // spawn the next stack
+                        SpawnStack();
+
+                        // Move the position of the camera upwards 
+                        // each time a new stack is spawned.
+                        cam.GetComponent<CameraBehaviour>().MovePosition();
+                    }                    
                 }
             }
         }
@@ -85,27 +130,126 @@ public class GameManager : MonoBehaviour
         if (selectedSpawner == stackSpawner1)
         {
             selectedSpawner = stackSpawner2;
+
+            // shift the spawner to be at the same Y-axis
+            selectedSpawner.transform.position = new Vector3(selectedSpawner.transform.position.x, selectedSpawner.transform.position.y, lastStack.transform.position.z);
+
+            // spawn stack
+            currentStack = Instantiate(stack, selectedSpawner.transform.position, Quaternion.identity);
+
+            // Change direction of the stack to move in X-axis
+            Stack._changeDirection = true;
         }
         else
         {
             selectedSpawner = stackSpawner1;
-        }
 
-        // spawn stack
-        currentStack = Instantiate(stack, selectedSpawner);
+            // shift the spawner to be at the same X-axis
+            selectedSpawner.transform.position = new Vector3(lastStack.transform.position.x, selectedSpawner.transform.position.y, selectedSpawner.transform.position.z);
+
+            // spawn stack
+            currentStack = Instantiate(stack, selectedSpawner.transform.position, Quaternion.identity);
+
+            // Change direction of the stack to move in Z-axis
+            Stack._changeDirection = false;
+        }
+        
+        // make the stack size to be the same as the last stack size
+        currentStack.transform.localScale = lastStack.transform.localScale;
 
         // Move the stack once it spawns
         //currentStack.transform.parent = null;
         currentStack.GetComponent<Stack>().MoveStack = true;
 
+        // Moves the spawners upwards
         MoveSpawners();
     }
-    
+
+    void SplitStackZ(float hangover)
+    {
+        float newStackSize = lastStack.transform.localScale.z - Mathf.Abs(hangover);
+        float cutoffBlockSize = currentStack.transform.localScale.z - newStackSize;
+
+        // Change the scale of the current stack and move it
+        currentStack.transform.localScale = new Vector3(currentStack.transform.localScale.x, 1, newStackSize);
+        currentStack.transform.position = new Vector3(currentStack.transform.position.x, currentStack.transform.position.y, currentStack.transform.position.z - hangover / 2);
+
+        // Calculate and pass in the cutoff block position
+        float cutOffBlockPositionZ = 0;
+
+        // Determines the side where the cutOff block will spawn
+        if (hangover > 0)
+        {
+            cutOffBlockPositionZ = currentStack.transform.position.z + lastStack.transform.localScale.z / 2;
+        }
+        else if (hangover < 0)
+        {
+            cutOffBlockPositionZ = currentStack.transform.position.z - lastStack.transform.localScale.z / 2;
+        }
+
+        // Spawn the cutoff block        
+        SpawnDropCubeZ(cutOffBlockPositionZ, cutoffBlockSize);
+    }
+
+    void SpawnDropCubeZ(float cutOffBlockPositionZ, float cutOffBlockSize)
+    {
+        var cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
+
+        cube.transform.localScale = new Vector3(currentStack.transform.localScale.x, 1, cutOffBlockSize);
+        cube.transform.position   = new Vector3(currentStack.transform.position.x, currentStack.transform.position.y, cutOffBlockPositionZ);
+
+        cube.AddComponent<Rigidbody>();     
+    }
+
+    void SplitStackX(float hangover)
+    {
+        float newStackSize = lastStack.transform.localScale.x - Mathf.Abs(hangover);
+        float cutoffBlockSize = currentStack.transform.localScale.x - newStackSize;
+
+        // Change the scale of the current stack and move it
+        currentStack.transform.localScale = new Vector3(newStackSize, 1, currentStack.transform.localScale.z);
+        currentStack.transform.position = new Vector3(currentStack.transform.position.x - hangover / 2, currentStack.transform.position.y, currentStack.transform.position.z);
+
+        // Calculate and pass in the cutoff block position
+        float cutOffBlockPositionX = 0;
+
+        // Determines the side where the cutOff block will spawn
+        if (hangover > 0)
+        {
+            cutOffBlockPositionX = currentStack.transform.position.x + lastStack.transform.localScale.x / 2;
+        }
+        else if (hangover < 0)
+        {
+            cutOffBlockPositionX = currentStack.transform.position.x - lastStack.transform.localScale.x / 2;
+        }
+
+        // Spawn the cutoff block        
+        SpawnDropCubeX(cutOffBlockPositionX, cutoffBlockSize);
+    }
+
+    void SpawnDropCubeX(float cutOffBlockPositionX, float cutOffBlockSize)
+    {
+        var cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
+
+        cube.transform.localScale = new Vector3(cutOffBlockSize, 1, currentStack.transform.localScale.z);
+        cube.transform.position = new Vector3(cutOffBlockPositionX, currentStack.transform.position.y, currentStack.transform.position.z);
+
+        cube.AddComponent<Rigidbody>();
+    }
+
     // Move the spawners
     void MoveSpawners()
     {
         stackSpawner1.transform.position += Vector3.up;
         stackSpawner2.transform.position += Vector3.up;
+    }
+
+    void IncrementScore()
+    {
+        _score++;
+
+        // Display the score UI
+        scoreText.text = _score.ToString();
     }
 
     public void PauseGame()
@@ -128,5 +272,16 @@ public class GameManager : MonoBehaviour
 
         // Reload scene
         SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+    }
+
+    void GameOver()
+    {
+        // Show game over screen
+        gameOverMenu.SetActive(true);
+
+        Time.timeScale = 0;
+
+        // show the final score
+        finalScoreText.text = scoreText.text;
     }
 }
