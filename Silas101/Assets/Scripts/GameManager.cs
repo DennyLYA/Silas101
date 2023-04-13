@@ -252,6 +252,9 @@ public class GameManager : MonoBehaviour
 
         // Display the score UI
         scoreText.text = _score.ToString();
+
+        // Trigger score animation
+        scoreText.GetComponent<Animator>().SetTrigger("GainScore");
     }
 
 
