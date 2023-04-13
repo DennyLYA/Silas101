@@ -19,11 +19,20 @@ public class GameManager : MonoBehaviour
     [Header("Game UI")]
     public TextMeshProUGUI scoreText;
     public TextMeshProUGUI finalScoreText;
+    public TextMeshProUGUI scoreCommendText;
     public GameObject      mainMenu;
     public GameObject      optionsMenu;
     public GameObject      gameOverMenu;
 
-    
+
+    // Score Commend Text - Colors
+    [Header("Score Commend Color")]
+    public Color poorCommendtxt_Color;
+    public Color niceCommendtxt_Color;
+    public Color greatCommendtxt_Color;
+
+
+
     private GameObject currentStack     = null;
     private Transform  selectedSpawner  = null;
 
@@ -55,6 +64,7 @@ public class GameManager : MonoBehaviour
 
                 // Enable score text
                 scoreText.gameObject.SetActive(true);
+                scoreCommendText.gameObject.SetActive(true);
 
                 // Reset the speed of the stacks
                 Stack.speed = 5;
@@ -72,28 +82,31 @@ public class GameManager : MonoBehaviour
                     currentStack.transform.parent = null;
 
                     // calculate hangover value
-                    float hangover = 0;
+                    float hangOver = 0;
                     float stackSize = 0;
 
                     // calculate hangover & stack size value based on stack direction
                     if (!Stack.changeDirection)
                     {
-                        hangover  = currentStack.transform.position.z - lastStack.transform.position.z;
+                        hangOver = currentStack.transform.position.z - lastStack.transform.position.z;
                         stackSize = lastStack.transform.localScale.z;
                     }
                     else if (Stack.changeDirection)
                     {
-                        hangover = currentStack.transform.position.x - lastStack.transform.position.x;
+                        hangOver = currentStack.transform.position.x - lastStack.transform.position.x;
                         stackSize = lastStack.transform.localScale.x;
                     }                    
 
                     // check if player has went over limit
-                    if (Mathf.Abs(hangover) >= stackSize)
+                    if (Mathf.Abs(hangOver) >= stackSize)
                     {
                         GameOver();
                     }
                     else
                     {
+                        // Check stack accuracy percentage
+                        TriggerScoreCommendText(hangOver, stackSize);                    
+
                         // Increment the score
                         IncrementScore();
 
@@ -101,11 +114,11 @@ public class GameManager : MonoBehaviour
                         // and split the stack
                         if (!Stack.changeDirection)
                         {
-                            SplitStackZ(hangover);
+                            SplitStackZ(hangOver);
                         }
                         else
                         {
-                            SplitStackX(hangover);
+                            SplitStackX(hangOver);
                         }
                             
                         // make the current stack
@@ -172,24 +185,24 @@ public class GameManager : MonoBehaviour
         currentStack.GetComponent<Stack>().MoveStack = true;
     }
 
-    void SplitStackZ(float hangover)
+    void SplitStackZ(float hangOver)
     {
-        float newStackSize = lastStack.transform.localScale.z - Mathf.Abs(hangover);
+        float newStackSize = lastStack.transform.localScale.z - Mathf.Abs(hangOver);
         float cutoffBlockSize = currentStack.transform.localScale.z - newStackSize;
 
         // Change the scale of the current stack and move it
         currentStack.transform.localScale = new Vector3(currentStack.transform.localScale.x, 1, newStackSize);
-        currentStack.transform.position = new Vector3(currentStack.transform.position.x, currentStack.transform.position.y, currentStack.transform.position.z - hangover / 2);
+        currentStack.transform.position = new Vector3(currentStack.transform.position.x, currentStack.transform.position.y, currentStack.transform.position.z - hangOver / 2);
 
         // Calculate and pass in the cutoff block position
         float cutOffBlockPositionZ = 0;
 
         // Determines the side where the cutOff block will spawn
-        if (hangover > 0)
+        if (hangOver > 0)
         {
             cutOffBlockPositionZ = currentStack.transform.position.z + lastStack.transform.localScale.z / 2;
         }
-        else if (hangover < 0)
+        else if (hangOver < 0)
         {
             cutOffBlockPositionZ = currentStack.transform.position.z - lastStack.transform.localScale.z / 2;
         }
@@ -209,24 +222,24 @@ public class GameManager : MonoBehaviour
         cube.GetComponent<BoxCollider>().enabled = false;
     }
 
-    void SplitStackX(float hangover)
+    void SplitStackX(float hangOver)
     {
-        float newStackSize = lastStack.transform.localScale.x - Mathf.Abs(hangover);
+        float newStackSize = lastStack.transform.localScale.x - Mathf.Abs(hangOver);
         float cutoffBlockSize = currentStack.transform.localScale.x - newStackSize;
 
         // Change the scale of the current stack and move it
         currentStack.transform.localScale = new Vector3(newStackSize, 1, currentStack.transform.localScale.z);
-        currentStack.transform.position = new Vector3(currentStack.transform.position.x - hangover / 2, currentStack.transform.position.y, currentStack.transform.position.z);
+        currentStack.transform.position = new Vector3(currentStack.transform.position.x - hangOver / 2, currentStack.transform.position.y, currentStack.transform.position.z);
 
         // Calculate and pass in the cutoff block position
         float cutOffBlockPositionX = 0;
 
         // Determines the side where the cutOff block will spawn
-        if (hangover > 0)
+        if (hangOver > 0)
         {
             cutOffBlockPositionX = currentStack.transform.position.x + lastStack.transform.localScale.x / 2;
         }
-        else if (hangover < 0)
+        else if (hangOver < 0)
         {
             cutOffBlockPositionX = currentStack.transform.position.x - lastStack.transform.localScale.x / 2;
         }
@@ -257,6 +270,38 @@ public class GameManager : MonoBehaviour
         scoreText.GetComponent<Animator>().SetTrigger("GainScore");
     }
 
+    void TriggerScoreCommendText(float hangOver, float stackSize)
+    {
+        // Get the percentage value to check precision
+        float percentageValue = (stackSize - Mathf.Abs(hangOver)) / stackSize;
+
+
+        // Display the corresponding text based on precision value
+        switch (percentageValue)
+        {
+            case <= 0.5f:
+
+                scoreCommendText.text = "Uh-Oh...";
+                scoreCommendText.color = poorCommendtxt_Color;
+                break;
+
+            case <= 0.95f:
+
+                scoreCommendText.text = "Nice!";
+                scoreCommendText.color = niceCommendtxt_Color;
+                break;
+
+            case <= 1f:
+
+                scoreCommendText.text = "GREAT!!";
+                scoreCommendText.color = greatCommendtxt_Color;
+                break;
+        }
+
+        // trigger commend text animation
+        scoreCommendText.GetComponent<Animator>().SetTrigger("GainScore");
+        
+    }
 
     // ======================================== Menus ======================================== //
     public void PauseGame()
