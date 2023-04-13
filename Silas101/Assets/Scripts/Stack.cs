@@ -4,18 +4,21 @@ using UnityEngine;
 
 public class Stack : MonoBehaviour
 {
-    public float speed;
+    public static float speed = 5;
+    public static bool changeDirection = false;
+
+
+    // Stack boundaries value
     public float minZBoundary, maxZBoundary;
     public float minXBoundary, maxXBoundary;
-
-    public static bool _changeDirection = false;
+    
 
     private bool _moveStack         = false;
     private bool _reverseMovement   = false;
-    //private bool _changeDirection   = false;
 
-    private Color    _stackColor;
+
     private Renderer _stackRenderer;
+
 
     // Start is called before the first frame update
     void Start()
@@ -29,7 +32,7 @@ public class Stack : MonoBehaviour
         if (_moveStack)
         {
             // Moves in the z direction
-            if (!_changeDirection)
+            if (!changeDirection)
             {
                 if (!_reverseMovement)
                 {
@@ -57,7 +60,7 @@ public class Stack : MonoBehaviour
                 }
             }
             // moves in the x direction
-            else if (_changeDirection)
+            else if (changeDirection)
             {
                 if (!_reverseMovement)
                 {

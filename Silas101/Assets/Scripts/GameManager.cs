@@ -7,19 +7,23 @@ using TMPro;
 public class GameManager : MonoBehaviour
 {   
     // Stack
+    [Header("Stack")]
     public GameObject   stack;
+    public GameObject   lastStack;
     public Transform    stackSpawner1;
     public Transform    stackSpawner2;
+    public float        stackSpeedIncrementValue;
+
 
     // UI
+    [Header("Game UI")]
     public TextMeshProUGUI scoreText;
     public TextMeshProUGUI finalScoreText;
     public GameObject      mainMenu;
     public GameObject      optionsMenu;
     public GameObject      gameOverMenu;
 
-
-    public  GameObject lastStack;
+    
     private GameObject currentStack     = null;
     private Transform  selectedSpawner  = null;
 
@@ -39,9 +43,9 @@ public class GameManager : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        // Click to start the Game
         if (Input.GetMouseButtonDown(0))
-        {
-            // Click to start the Game
+        {            
             if (!_hasGameStarted)
             {
                 _hasGameStarted = true;
@@ -51,6 +55,9 @@ public class GameManager : MonoBehaviour
 
                 // Enable score text
                 scoreText.gameObject.SetActive(true);
+
+                // Reset the speed of the stacks
+                Stack.speed = 5;
 
                 // Spawn the first stack
                 SpawnStack();
@@ -65,16 +72,16 @@ public class GameManager : MonoBehaviour
                     currentStack.transform.parent = null;
 
                     // calculate hangover value
-                    float hangover;
-                    float stackSize;
+                    float hangover = 0;
+                    float stackSize = 0;
 
                     // calculate hangover & stack size value based on stack direction
-                    if (!Stack._changeDirection)
+                    if (!Stack.changeDirection)
                     {
                         hangover  = currentStack.transform.position.z - lastStack.transform.position.z;
                         stackSize = lastStack.transform.localScale.z;
                     }
-                    else
+                    else if (Stack.changeDirection)
                     {
                         hangover = currentStack.transform.position.x - lastStack.transform.position.x;
                         stackSize = lastStack.transform.localScale.x;
@@ -92,7 +99,7 @@ public class GameManager : MonoBehaviour
 
                         // Otherwise, continue the game
                         // and split the stack
-                        if (!Stack._changeDirection)
+                        if (!Stack.changeDirection)
                         {
                             SplitStackZ(hangover);
                         }
@@ -125,44 +132,44 @@ public class GameManager : MonoBehaviour
 
     // Spawns a new stack at a spawner
     void SpawnStack()
-    {     
+    {
+        // move the spawners up
+        stackSpawner1.transform.position += Vector3.up;
+        stackSpawner2.transform.position += Vector3.up;        
+
         // change stack spawner
         if (selectedSpawner == stackSpawner1)
         {
             selectedSpawner = stackSpawner2;
 
-            // shift the spawner to be at the same Y-axis
+            // shift the spawner to be at the same Z-axis as the last stack
             selectedSpawner.transform.position = new Vector3(selectedSpawner.transform.position.x, selectedSpawner.transform.position.y, lastStack.transform.position.z);
 
-            // spawn stack
-            currentStack = Instantiate(stack, selectedSpawner.transform.position, Quaternion.identity);
-
             // Change direction of the stack to move in X-axis
-            Stack._changeDirection = true;
+            Stack.changeDirection = true;
         }
         else
         {
             selectedSpawner = stackSpawner1;
 
-            // shift the spawner to be at the same X-axis
-            selectedSpawner.transform.position = new Vector3(lastStack.transform.position.x, selectedSpawner.transform.position.y, selectedSpawner.transform.position.z);
-
-            // spawn stack
-            currentStack = Instantiate(stack, selectedSpawner.transform.position, Quaternion.identity);
+            // shift the spawner to be at the same X-axis as the last stack
+            selectedSpawner.transform.position = new Vector3(lastStack.transform.position.x, selectedSpawner.transform.position.y, selectedSpawner.transform.position.z);            
 
             // Change direction of the stack to move in Z-axis
-            Stack._changeDirection = false;
+            Stack.changeDirection = false;
         }
-        
+
+        // spawn stack
+        currentStack = Instantiate(stack, selectedSpawner.transform.position, Quaternion.identity);
+
         // make the stack size to be the same as the last stack size
         currentStack.transform.localScale = lastStack.transform.localScale;
 
-        // Move the stack once it spawns
-        //currentStack.transform.parent = null;
-        currentStack.GetComponent<Stack>().MoveStack = true;
+        // Increment the speed of the stack
+        Stack.speed += stackSpeedIncrementValue;
 
-        // Moves the spawners upwards
-        MoveSpawners();
+        // Move the stack once it spawns
+        currentStack.GetComponent<Stack>().MoveStack = true;
     }
 
     void SplitStackZ(float hangover)
@@ -198,7 +205,8 @@ public class GameManager : MonoBehaviour
         cube.transform.localScale = new Vector3(currentStack.transform.localScale.x, 1, cutOffBlockSize);
         cube.transform.position   = new Vector3(currentStack.transform.position.x, currentStack.transform.position.y, cutOffBlockPositionZ);
 
-        cube.AddComponent<Rigidbody>();     
+        cube.AddComponent<Rigidbody>();
+        cube.GetComponent<BoxCollider>().enabled = false;
     }
 
     void SplitStackX(float hangover)
@@ -235,13 +243,7 @@ public class GameManager : MonoBehaviour
         cube.transform.position = new Vector3(cutOffBlockPositionX, currentStack.transform.position.y, currentStack.transform.position.z);
 
         cube.AddComponent<Rigidbody>();
-    }
-
-    // Move the spawners
-    void MoveSpawners()
-    {
-        stackSpawner1.transform.position += Vector3.up;
-        stackSpawner2.transform.position += Vector3.up;
+        cube.GetComponent<BoxCollider>().enabled = false;
     }
 
     void IncrementScore()
@@ -252,6 +254,8 @@ public class GameManager : MonoBehaviour
         scoreText.text = _score.ToString();
     }
 
+
+    // ======================================== Menus ======================================== //
     public void PauseGame()
     {
         optionsMenu.SetActive(true);
