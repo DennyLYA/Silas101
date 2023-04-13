@@ -4,9 +4,9 @@ using UnityEngine;
 
 public class Stack : MonoBehaviour
 {
+    public static GameObject lastStack;
     public static float speed = 5;
-    public static bool changeDirection = false;
-
+    
 
     // Stack boundaries value
     public float minZBoundary, maxZBoundary;
@@ -15,6 +15,7 @@ public class Stack : MonoBehaviour
 
     private bool _moveStack         = false;
     private bool _reverseMovement   = false;
+    private bool _changeDirection   = false;
 
 
     private Renderer _stackRenderer;
@@ -23,6 +24,11 @@ public class Stack : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+        if (lastStack == null)
+        {
+            lastStack = this.gameObject;
+        }
+
         RandomizeStackColor();
     }
 
@@ -32,7 +38,7 @@ public class Stack : MonoBehaviour
         if (_moveStack)
         {
             // Moves in the z direction
-            if (!changeDirection)
+            if (!_changeDirection)
             {
                 if (!_reverseMovement)
                 {
@@ -60,7 +66,7 @@ public class Stack : MonoBehaviour
                 }
             }
             // moves in the x direction
-            else if (changeDirection)
+            else if (_changeDirection)
             {
                 if (!_reverseMovement)
                 {
@@ -103,5 +109,11 @@ public class Stack : MonoBehaviour
     {
         get { return _moveStack; }
         set { _moveStack = value; }
+    }
+
+    public bool ChangeDirection
+    {
+        get { return _changeDirection; }
+        set { _changeDirection = value; }
     }
 }

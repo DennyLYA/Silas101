@@ -1354,7 +1354,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   stack: {fileID: 7102478564641050705, guid: 97afe03829ce0004a800c73f4a5c8692, type: 3}
-  lastStack: {fileID: 1859399155}
+  lastStack: {fileID: 0}
   stackSpawner1: {fileID: 934603930}
   stackSpawner2: {fileID: 319001228}
   stackSpeedIncrementValue: 0.4
@@ -2317,11 +2317,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1851383888}
   m_CullTransparentMesh: 1
---- !u!1 &1859399155 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 7102478564641050705, guid: 97afe03829ce0004a800c73f4a5c8692, type: 3}
-  m_PrefabInstance: {fileID: 7102478564778151615}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1867062128
 GameObject:
   m_ObjectHideFlags: 0
